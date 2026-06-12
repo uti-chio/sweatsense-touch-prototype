@@ -34,7 +34,7 @@ struct TouchPoint {
 struct SweatState {
   int hydration = 78;
   int contact = 91;
-  int glucose = 92;
+  int glucose = 82;
   float tempC = 31.7f;
   int progress = 0;
   bool measuring = false;
@@ -47,19 +47,13 @@ enum class Screen {
   Home,
   Controls,
   Message,
-  GlucoseGraph,
+  GlucoseDetail,
 };
 
 SweatState sweat;
 String serialInput;
 bool stopRequested = false;
 Screen activeScreen = Screen::Home;
-
-static constexpr int GLUCOSE_POINTS = 28;
-int glucoseHistory[GLUCOSE_POINTS];
-uint8_t glucoseCursor = 0;
-uint8_t glucoseCount = 0;
-uint32_t lastGlucoseTickMs = 0;
 
 static uint16_t rgb(uint8_t r, uint8_t g, uint8_t b) {
   return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
@@ -149,36 +143,6 @@ static void drawHome() {
   drawText("sweep progress", 16, 248, C_MUTED);
 }
 
-static void pushGlucosePoint(int value) {
-  glucoseHistory[glucoseCursor] = constrain(value, 60, 150);
-  glucoseCursor = (glucoseCursor + 1) % GLUCOSE_POINTS;
-  if (glucoseCount < GLUCOSE_POINTS) glucoseCount++;
-}
-
-static int glucoseAt(uint8_t index) {
-  if (index >= glucoseCount) return sweat.glucose;
-  uint8_t start = (glucoseCursor + GLUCOSE_POINTS - glucoseCount) % GLUCOSE_POINTS;
-  return glucoseHistory[(start + index) % GLUCOSE_POINTS];
-}
-
-static void seedGlucoseHistory() {
-  glucoseCursor = 0;
-  glucoseCount = 0;
-  for (int i = 0; i < GLUCOSE_POINTS; i++) {
-    float wave = sinf(i * 0.38f) * 8.0f + cosf(i * 0.17f) * 4.0f;
-    pushGlucosePoint(92 + (int)wave);
-  }
-  sweat.glucose = glucoseAt(glucoseCount - 1);
-}
-
-static void updateGlucoseMonitor(bool force = false) {
-  if (!force && millis() - lastGlucoseTickMs < 1200) return;
-  lastGlucoseTickMs = millis();
-  int next = 92 + (int)(10.0f * sinf(millis() / 4500.0f)) + (int)(4.0f * sinf(millis() / 1300.0f));
-  sweat.glucose = constrain(next, 70, 130);
-  pushGlucosePoint(sweat.glucose);
-}
-
 static void drawControls() {
   activeScreen = Screen::Controls;
   gfx->fillScreen(C_BG);
@@ -201,67 +165,36 @@ static void drawMessage(const String &title, const String &body, uint16_t color)
   drawButton(54, 222, 132, 38, "BACK", C_PANEL);
 }
 
-static void drawGlucoseGraph() {
-  activeScreen = Screen::GlucoseGraph;
-  updateGlucoseMonitor(true);
+static void drawGlucoseDetail() {
+  activeScreen = Screen::GlucoseDetail;
   gfx->fillScreen(C_BG);
 
-  drawText("Glucose Monitor", 14, 12, C_TEXT, 2);
-  drawText("live demo trend", 15, 34, C_MUTED);
+  drawText("Glucose Detail", 14, 12, C_TEXT, 2);
+  drawText("prototype estimate only", 15, 34, C_MUTED);
   fillRoundRect(160, 12, 64, 24, 12, C_AMBER);
   drawText(String(sweat.glucose) + " mg", 171, 20, rgb(255, 255, 255));
 
-  fillRoundRect(14, 58, 212, 140, 8, C_PANEL);
-  drawRoundRect(14, 58, 212, 140, 8, C_LINE);
+  fillRoundRect(14, 56, 212, 126, 8, C_PANEL);
+  drawRoundRect(14, 56, 212, 126, 8, C_LINE);
+  gfx->fillCircle(30, 78, 6, C_AMBER);
+  drawText("No live glucose curve yet", 43, 72, C_TEXT);
+  drawText("This value is a demo", 28, 100, C_MUTED);
+  drawText("placeholder until the", 28, 116, C_MUTED);
+  drawText("AD5940 EIS model and", 28, 132, C_MUTED);
+  drawText("calibration are connected.", 28, 148, C_MUTED);
 
-  const int gx = 28;
-  const int gy = 72;
-  const int gw = 182;
-  const int gh = 106;
-  const int minG = 70;
-  const int maxG = 130;
+  fillRoundRect(14, 192, 100, 48, 8, C_PANEL);
+  drawRoundRect(14, 192, 100, 48, 8, C_LINE);
+  drawText("available", 26, 203, C_MUTED);
+  drawText("EIS sweep", 26, 222, C_TEXT);
 
-  for (int i = 0; i <= 3; i++) {
-    int y = gy + (gh * i) / 3;
-    gfx->drawFastHLine(gx, y, gw, rgb(230, 238, 232));
-  }
-  gfx->drawFastVLine(gx, gy, gh, C_LINE);
-  gfx->drawFastHLine(gx, gy + gh, gw, C_LINE);
-
-  drawText("130", 6, gy - 2, C_MUTED);
-  drawText("100", 6, gy + gh / 2 - 4, C_MUTED);
-  drawText("70", 11, gy + gh - 6, C_MUTED);
-
-  if (glucoseCount > 1) {
-    for (int i = 1; i < glucoseCount; i++) {
-      int prev = glucoseAt(i - 1);
-      int cur = glucoseAt(i);
-      int x0 = gx + ((i - 1) * gw) / (GLUCOSE_POINTS - 1);
-      int x1 = gx + (i * gw) / (GLUCOSE_POINTS - 1);
-      int y0 = gy + gh - map(prev, minG, maxG, 0, gh);
-      int y1 = gy + gh - map(cur, minG, maxG, 0, gh);
-      y0 = constrain(y0, gy, gy + gh);
-      y1 = constrain(y1, gy, gy + gh);
-      gfx->drawLine(x0, y0, x1, y1, C_AMBER);
-      gfx->drawLine(x0, y0 + 1, x1, y1 + 1, C_AMBER);
-    }
-    int lastX = gx + ((glucoseCount - 1) * gw) / (GLUCOSE_POINTS - 1);
-    int lastY = gy + gh - map(sweat.glucose, minG, maxG, 0, gh);
-    gfx->fillCircle(lastX, constrain(lastY, gy, gy + gh), 4, C_RED);
-  }
-
-  fillRoundRect(14, 206, 100, 42, 8, C_PANEL);
-  drawRoundRect(14, 206, 100, 42, 8, C_LINE);
-  drawText("window", 26, 216, C_MUTED);
-  drawText("30 sec", 26, 232, C_TEXT);
-
-  fillRoundRect(126, 206, 100, 42, 8, C_PANEL);
-  drawRoundRect(126, 206, 100, 42, 8, C_LINE);
-  drawText("state", 138, 216, C_MUTED);
-  drawText(sweat.glucose > 115 ? "rising" : "stable", 138, 232, sweat.glucose > 115 ? C_AMBER : C_GREEN);
+  fillRoundRect(126, 192, 100, 48, 8, C_PANEL);
+  drawRoundRect(126, 192, 100, 48, 8, C_LINE);
+  drawText("waiting for", 138, 203, C_MUTED);
+  drawText("sensor model", 138, 222, C_TEXT);
 
   drawButton(16, 258, 96, 20, "BACK", C_PANEL);
-  drawButton(128, 258, 96, 20, "READ", C_GREEN, rgb(255, 255, 255));
+  drawButton(128, 258, 96, 20, "RUN EIS", C_GREEN, rgb(255, 255, 255));
 }
 
 static bool readTouch(TouchPoint &p) {
@@ -298,9 +231,9 @@ static void printStatus() {
   Serial.print("Contact: ");
   Serial.print(sweat.contact);
   Serial.println("%");
-  Serial.print("Glucose trend: ");
+  Serial.print("Glucose placeholder: ");
   Serial.print(sweat.glucose);
-  Serial.println(" mg/dL demo");
+  Serial.println(" mg/dL demo estimate");
   Serial.println("================");
   Serial.println();
 }
@@ -353,8 +286,6 @@ static void runPresentationSweep(float startHz, float endHz, int points, float a
     sweat.progress = map(i + 1, 0, points, 0, 100);
     sweat.contact = constrain((int)(100.0f - fabsf(phase) * 1.7f), 20, 99);
     sweat.hydration = constrain((int)(100.0f - ((mag / max(firstMag, 1.0f)) - 1.0f) * 28.0f), 25, 96);
-    sweat.glucose = constrain(88 + (int)(10.0f * sinf((float)i * 0.8f)), 70, 130);
-    pushGlucosePoint(sweat.glucose);
     sweat.tempC = 31.2f + 0.7f * sinf((float)millis() / 5000.0f);
     drawHome();
     delay(360);
@@ -418,8 +349,8 @@ static void handleCommand(String command) {
   }
 
   if (upper == "GLUCOSE" || upper == "GRAPH:GLUCOSE") {
-    drawGlucoseGraph();
-    Serial.println("Glucose monitor graph opened.");
+    drawGlucoseDetail();
+    Serial.println("Glucose detail opened: placeholder estimate; no validated glucose curve yet.");
     return;
   }
 
@@ -459,14 +390,14 @@ static void handleCommand(String command) {
 static void handleTouch(const TouchPoint &tp) {
   if (!tp.down || sweat.measuring) return;
 
-  if (activeScreen == Screen::GlucoseGraph) {
+  if (activeScreen == Screen::GlucoseDetail) {
     if (tp.y >= 250 && tp.x < 120) {
       activeScreen = Screen::Home;
       drawHome();
     } else if (tp.y >= 250 && tp.x >= 120) {
       runPresentationSweep(10000.0f, 1000.0f, 8, 150.0f);
     } else {
-      drawGlucoseGraph();
+      drawGlucoseDetail();
     }
     return;
   }
@@ -501,7 +432,7 @@ static void handleTouch(const TouchPoint &tp) {
   } else if (tp.x >= 120 && tp.y < 200) {
     printCheck();
   } else if (tp.x < 120) {
-    drawGlucoseGraph();
+    drawGlucoseDetail();
   } else {
     sweat.status = "READY";
     activeScreen = Screen::Home;
@@ -532,7 +463,6 @@ void setup() {
     Serial.println("Display init failed.");
   }
   gfx->setRotation(0);
-  seedGlucoseHistory();
   activeScreen = Screen::Home;
   drawHome();
 
@@ -553,10 +483,6 @@ void loop() {
   }
 
   static uint32_t lastTouchMs = 0;
-  if (activeScreen == Screen::GlucoseGraph && millis() - lastGlucoseTickMs >= 1200) {
-    drawGlucoseGraph();
-  }
-
   if (millis() - lastTouchMs > 180) {
     TouchPoint tp;
     if (readTouch(tp)) {

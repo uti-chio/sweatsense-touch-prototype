@@ -28,8 +28,9 @@ The firmware uses the off-the-shelf board pinout:
 
 - Sweat contact area with CE0/SE0 electrode pads
 - Hydration index, skin contact, glucose placeholder, skin temperature
-- Touch actions for fast read, AFE check, status, display refresh, and a live glucose monitoring graph
-- Tap the **Glucose** card to open the glucose graph; tap **BACK** to return to the dashboard
+- Touch actions for fast read, AFE check, status, display refresh, and a transparent glucose detail screen
+- Tap the **Glucose** card to show that glucose is currently a prototype/demo estimate, not a validated live curve yet
+- On the glucose detail screen, tap **RUN EIS** to trigger a demo EIS sweep or **BACK** to return to the dashboard
 - USB serial commands compatible with the web demo:
   - `STATUS`
   - `CHECK`
@@ -40,8 +41,9 @@ The firmware uses the off-the-shelf board pinout:
   - `STOP`
 
 The measurement values are presentation/demo values on this off-the-shelf board.
-When the custom PCB is ready, replace `runPresentationSweep()` with the real AD5940
-sensor call while keeping the UI screens and serial command contract.
+The firmware does not claim a live glucose curve yet. When the custom PCB and
+calibrated AD5940/EIS glucose model are ready, replace `runPresentationSweep()`
+with the real sensor call while keeping the UI screens and serial command contract.
 
 ## Build And Flash
 
@@ -52,7 +54,7 @@ C:\Users\zoeyz\AppData\Local\Programs\Python\Python314\python.exe -m pip install
 C:\Users\zoeyz\AppData\Local\Programs\Python\Python314\python.exe -m platformio run -t upload --upload-port COM5
 ```
 
-After upload, the board starts the touch interface automatically whenever it is powered from USB or battery. For a demo, plug the board into the laptop or a USB power bank, wait for the **SweatSense** dashboard, then tap **Glucose** to show the monitoring graph.
+After upload, the board starts the touch interface automatically whenever it is powered from USB or battery. For a demo, plug the board into the laptop or a USB power bank, wait for the **SweatSense** dashboard, then tap **Glucose** to show the current prototype status and the **RUN EIS** action.
 
 Then open serial monitor:
 
