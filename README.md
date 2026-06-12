@@ -9,8 +9,7 @@ This repository separates the project into two parts:
 
 ## Current Hardware Target
 
-The current development board is an off-the-shelf ESP32-S3 touch display board, likely a Waveshare `ESP32-S3-Touch-LCD-1.69` or pin-compatible clone.
-
+The current development board is an off-the-shelf ESP32-S3 touch display board, likely a Waveshare `ESP32-S3-Touch-LCD-1.69`.
 Detected board characteristics:
 
 - ESP32-S3
