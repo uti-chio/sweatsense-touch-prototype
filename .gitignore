@@ -1,0 +1,10 @@
+.pio/
+.vscode/
+*.bin
+*.elf
+*.map
+*.zip
+*.log
+__pycache__/
+node_modules/
+backup-*.bin

@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7faf8">
+  <title>SweatSense Board Demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="app-head">
+      <div>
+        <p class="eyebrow">ESP32-S3 + AD5940/AD5941 potentiostat</p>
+        <h1>SweatSense Board Demo</h1>
+      </div>
+      <div class="connection-pill" id="connection-pill">
+        <span class="dot"></span>
+        <span id="connection-label">Not connected</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="workspace" aria-label="Interactive board">
+        <div class="board-stage">
+          <button class="hotspot pad-left" data-action="electrode" type="button" aria-label="Read sweat electrode area">
+            <span>CE0</span>
+          </button>
+          <button class="hotspot pad-right" data-action="electrode" type="button" aria-label="Read sweat electrode area">
+            <span>SE0</span>
+          </button>
+
+          <button class="chip afe" data-action="check" type="button">
+            <span class="chip-label">AD5940 AFE</span>
+            <span class="chip-sub">impedance front end</span>
+          </button>
+
+          <button class="chip mcu" data-action="status" type="button">
+            <span class="chip-label">ESP32-S3</span>
+            <span class="chip-sub">USB serial / BLE</span>
+          </button>
+
+          <button class="chip display" data-action="display" type="button">
+            <span class="chip-label">Display UI</span>
+            <span class="chip-sub">hydration card</span>
+          </button>
+
+          <button class="side-button" data-action="button" type="button" aria-label="Simulate board button"></button>
+          <div class="trace t1"></div>
+          <div class="trace t2"></div>
+          <div class="trace t3"></div>
+          <div class="trace t4"></div>
+        </div>
+
+        <div class="metrics" aria-label="Live sweat metrics">
+          <article>
+            <span class="metric-label">Hydration index</span>
+            <strong id="hydration-value">--</strong>
+            <small id="hydration-note">Connect or run demo</small>
+          </article>
+          <article>
+            <span class="metric-label">Skin contact</span>
+            <strong id="contact-value">--</strong>
+            <small>from low-frequency |Z|</small>
+          </article>
+          <article>
+            <span class="metric-label">Sweat trend</span>
+            <strong id="trend-value">--</strong>
+            <small>presentation estimate</small>
+          </article>
+        </div>
+      </section>
+
+      <aside class="control-panel">
+        <section class="panel-block">
+          <h2>Board Link</h2>
+          <div class="button-grid">
+            <button class="primary" id="connect-btn" type="button">Connect USB</button>
+            <button id="disconnect-btn" type="button" disabled>Disconnect</button>
+            <button id="demo-btn" type="button">Demo mode</button>
+            <button id="stop-btn" type="button" disabled>Stop</button>
+          </div>
+          <p class="hint" id="support-note">Use Chrome or Edge. Select the ESP32-S3 serial port when prompted.</p>
+        </section>
+
+        <section class="panel-block">
+          <h2>Quick Actions</h2>
+          <div class="action-list">
+            <button data-command="STATUS" type="button">Board status</button>
+            <button data-command="CHECK" type="button">Check AD5940</button>
+            <button data-command="MEASURE:0,10000,1000,2,0.0,0.0,10000.0,1,1,127000.0,150.0,0,0,150" type="button">Fast sweat read</button>
+            <button data-command="MEASURE:SAMPLE" type="button">Full EIS sweep</button>
+            <button data-command="SWEATUI:92,31.7,78,66" type="button">Board display card</button>
+          </div>
+        </section>
+
+        <section class="panel-block">
+          <h2>Sweep Settings</h2>
+          <div class="form-grid">
+            <label>Start Hz <input id="start-freq" value="10000" inputmode="decimal"></label>
+            <label>End Hz <input id="end-freq" value="1000" inputmode="decimal"></label>
+            <label>Pts/dec <input id="points-decade" value="2" inputmode="numeric"></label>
+            <label>Amplitude mV <input id="amplitude" value="150" inputmode="numeric"></label>
+          </div>
+          <button class="wide accent" id="custom-sweep-btn" type="button">Run custom read</button>
+        </section>
+      </aside>
+    </main>
+
+    <section class="data-area">
+      <div class="chart-panel">
+        <div class="chart-head">
+          <h2>Live Impedance</h2>
+          <span id="point-count">0 points</span>
+        </div>
+        <canvas id="sweep-chart" width="900" height="360" aria-label="Impedance chart"></canvas>
+      </div>
+
+      <div class="log-panel">
+        <div class="chart-head">
+          <h2>Board Responses</h2>
+          <button id="clear-log-btn" type="button">Clear</button>
+        </div>
+        <pre id="log" aria-live="polite"></pre>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
