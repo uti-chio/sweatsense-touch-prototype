@@ -28,10 +28,12 @@ The firmware uses the off-the-shelf board pinout:
 
 - Sweat contact area with CE0/SE0 electrode pads
 - Hydration index, skin contact, glucose placeholder, skin temperature
-- Touch actions for fast read, AFE check, status, and display refresh
+- Touch actions for fast read, AFE check, status, display refresh, and a live glucose monitoring graph
+- Tap the **Glucose** card to open the glucose graph; tap **BACK** to return to the dashboard
 - USB serial commands compatible with the web demo:
   - `STATUS`
   - `CHECK`
+  - `GLUCOSE`
   - `MEASURE:SAMPLE`
   - `MEASURE:0,start,end,points,...,amplitude`
   - `SWEATUI:...`
@@ -49,6 +51,8 @@ From this folder:
 C:\Users\zoeyz\AppData\Local\Programs\Python\Python314\python.exe -m pip install --user platformio
 C:\Users\zoeyz\AppData\Local\Programs\Python\Python314\python.exe -m platformio run -t upload --upload-port COM5
 ```
+
+After upload, the board starts the touch interface automatically whenever it is powered from USB or battery. For a demo, plug the board into the laptop or a USB power bank, wait for the **SweatSense** dashboard, then tap **Glucose** to show the monitoring graph.
 
 Then open serial monitor:
 
